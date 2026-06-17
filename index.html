@@ -1,0 +1,2059 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPACE of Eve</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+ 
+.photo-item::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        transparent,
+        rgba(255, 255, 255, 0.15),
+        transparent
+    );
+    transform: skewX(-20deg);
+    transition: none;
+}
+
+.photo-item:hover::after {
+    animation: shimmer 0.8s ease forwards;
+}
+
+@keyframes shimmer {
+    from { left: -100%; }
+    to { left: 200%; }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.3s ease;
+}
+
+
+.animate-fade-in {
+    animation: fade-in 0.3s ease;
+}
+
+/* 自定义滚动条（便签内） */
+#inspiration-list::-webkit-scrollbar {
+    width: 4px;
+}
+#inspiration-list::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 2px;
+}
+
+/* ====== 鼠标跟随光晕 ====== */
+.cursor-glow {
+    position: fixed;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, rgba(99,102,241,0.04) 40%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s ease;
+    mix-blend-mode: screen;
+    filter: blur(20px);
+}
+
+/* ====== 宇宙粒子画布 ====== */
+.particle-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.7;
+}
+
+/* ====== 滚动渐入动画 ====== */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.reveal-left {
+    opacity: 0;
+    transform: translateX(-40px);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal-left.active {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.reveal-right {
+    opacity: 0;
+    transform: translateX(40px);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal-right.active {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.reveal-scale {
+    opacity: 0;
+    transform: scale(0.92);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal-scale.active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* ====== 轮播区宇宙光效 ====== */
+.carousel-universe-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 120%;
+    background: radial-gradient(ellipse at center, rgba(99,102,241,0.15) 0%, rgba(168,85,247,0.08) 30%, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+    filter: blur(40px);
+    animation: nebula-breathe 6s ease-in-out infinite;
+}
+
+@keyframes nebula-breathe {
+    0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+}
+
+/* ====== 3D 倾斜卡片 ====== */
+.carousel-item {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+
+.carousel-item img {
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+}
+
+/* ====== 地图任务日志 ====== */
+.mission-log {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 180px;
+    max-height: calc(100% - 24px);
+    overflow-y: auto;
+    z-index: 500;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.mission-log::-webkit-scrollbar {
+    width: 3px;
+}
+
+.mission-log::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 2px;
+}
+
+.mission-log-title {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.mission-log-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mission-log-item:last-child {
+    border-bottom: none;
+}
+
+.mission-log-item:hover {
+    transform: translateX(4px);
+}
+
+.mission-log-item:hover .mission-log-name {
+    color: #c084fc;
+}
+
+.mission-log-thumb {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1.5px solid rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.mission-log-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mission-log-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.mission-log-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.3s;
+}
+
+.mission-log-count {
+    font-size: 9px;
+    color: rgba(165, 180, 252, 0.7);
+}
+
+/* 地图连线动画 */
+.map-constellation-line {
+    stroke-dasharray: 8 6;
+    animation: dash-flow 2s linear infinite;
+}
+
+@keyframes dash-flow {
+    to { stroke-dashoffset: -28; }
+}
+
+/* ====== 灵感便签升级 ====== */
+.inspiration-widget {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 300px;
+    z-index: 40;
+    border-radius: 20px;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(99, 102, 241, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    animation: widget-float 5s ease-in-out infinite;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.inspiration-widget:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+        0 25px 70px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(99, 102, 241, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+@keyframes widget-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+.inspiration-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.inspiration-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.05em;
+}
+
+.inspiration-title span {
+    font-size: 10px;
+    color: #c084fc;
+    animation: pulse-star 2s ease-in-out infinite;
+}
+
+@keyframes pulse-star {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+.inspiration-toggle {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.inspiration-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+}
+
+.inspiration-body {
+    padding: 14px 16px;
+}
+
+.inspiration-input-wrap {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.inspiration-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px 36px 10px 14px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    outline: none;
+    transition: all 0.3s;
+}
+
+.inspiration-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.inspiration-input:focus {
+    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(0, 0, 0, 0.28);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+}
+
+.inspiration-submit {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(99,102,241,0.8), rgba(168,85,247,0.8));
+    border: none;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    opacity: 0.8;
+}
+
+.inspiration-submit:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.inspiration-list {
+    max-height: 180px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.inspiration-list::-webkit-scrollbar {
+    width: 3px;
+}
+
+.inspiration-list::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.25);
+    border-radius: 2px;
+}
+
+.inspiration-item {
+    position: relative;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    animation: item-in 0.4s ease forwards;
+}
+
+@keyframes item-in {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.inspiration-item:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.15);
+    transform: translateX(4px);
+}
+
+.inspiration-item-text {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.5;
+    padding-right: 18px;
+}
+
+.inspiration-item-time {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.3);
+    margin-top: 6px;
+    letter-spacing: 0.05em;
+}
+
+.inspiration-item-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.3s;
+}
+
+.inspiration-item:hover .inspiration-item-delete {
+    opacity: 1;
+}
+
+.inspiration-item-delete:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: rgba(239, 68, 68, 0.8);
+}
+
+.inspiration-empty {
+    text-align: center;
+    padding: 20px 0;
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 11px;
+    font-style: italic;
+}
+
+        body {
+    font-family: 'Inter', sans-serif;
+    color: #e2e8f0;
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+}
+
+html {
+    height: -webkit-fill-available;
+}
+
+/* 背景层：单独放一个 div 更稳定 */
+.bg-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('./Sentosa.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -2;
+}
+
+/* 暗色遮罩 */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 14, 39, 0.75);
+    z-index: -1;
+}
+
+
+/* 暗色遮罩 */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(5, 8, 20, 0.05);
+    z-index: -1;
+}
+
+        
+        /* 星空背景 */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        /* 照片悬停效果 */
+        .photo-item {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .photo-item:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3);
+            z-index: 10;
+        }
+        
+        .photo-item img {
+            transition: transform 0.4s ease;
+        }
+        
+        .photo-item:hover img {
+            transform: scale(1.1);
+        }
+        
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .lightbox.active {
+            display: flex;
+        }
+        
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 0 60px rgba(99, 102, 241, 0.5);
+        }
+        
+        .lightbox-close {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            font-size: 40px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .lightbox-close:hover {
+            transform: rotate(90deg);
+        }
+        
+        /* 文章列表样式 */
+       .article-item {
+    transition: all 0.3s ease;
+    border-left: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+    .article-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #818cf8, #c084fc);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+    .article-item:hover {
+    background: rgba(99, 102, 241, 0.08);
+    transform: translateX(6px);
+    border-left-color: transparent; /* 用伪元素代替 */
+}
+
+.article-item:hover::before {
+    opacity: 1;
+}
+
+        
+        /* 地图容器 */
+        .map-container {
+            background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+        
+        /* 打卡记录 */
+        .check-in-item {
+            transition: all 0.3s;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+        
+        .check-in-item:hover {
+            border-color: rgba(99, 102, 241, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+        width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(99, 102, 241, 0.25);
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(99, 102, 241, 0.5);
+    }
+        
+        /* 玻璃拟态效果 */
+        .glass {
+    background: rgba(15, 23, 42, 0.25);          /* 更透一点 */
+    backdrop-filter: blur(20px) saturate(140%);  /* 增强模糊 */
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.06); /* 更细的边 */
+    box-shadow: 
+        0 4px 30px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);  /* 顶部内发光 */
+}
+
+        
+        /* 渐变文字 */
+        .gradient-text {
+            background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            opacity: 0.6;  /* 新增：0.7 = 70%不透明，数字越小越透明 */
+        }
+/* ====== 照片轮播（新增） ====== */
+
+.photo-carousel {
+    width: 100%;
+    overflow-x: auto;        /* 改成 auto：允许滚动 */
+    overflow-y: hidden;
+    position: relative;
+    padding: 20px 0 80px;
+    cursor: grab;
+    z-index: 1;
+    touch-action: pan-x;      /* iOS 上优先水平滑动 */
+    -webkit-overflow-scrolling: touch;  /* iOS 惯性滚动 */
+    /* 隐藏滚动条（所有浏览器） */
+    scrollbar-width: none;      /* Firefox */
+    -ms-overflow-style: none;   /* IE 10+ */
+}
+
+/* Chrome/Safari 隐藏滚动条 */
+.photo-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.photo-carousel:active {
+    cursor: grabbing;
+}
+
+
+.carousel-track {
+    display: flex;
+    gap: 28px;
+    padding: 20px 40px;
+    width: max-content;  /* 关键：内容撑开，超出容器 */
+}
+
+.carousel-item {
+    flex-shrink: 0;
+    width: 170px;
+    height: 230px;
+    position: relative;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 16px;
+}
+
+.carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    -webkit-box-reflect: below 10px linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 100%);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    display: block;
+}
+
+/* 悬停放大 */
+.carousel-item:hover {
+    z-index: 10;
+}
+
+.carousel-item:hover img {
+    transform: scale(1.18);
+    box-shadow: 0 20px 50px rgba(99, 102, 241, 0.35);
+    border-color: rgba(192, 132, 252, 0.4);
+}
+
+/* 点击激活：更大更亮 */
+.carousel-item.active img {
+    transform: scale(1.25);
+    box-shadow: 0 25px 60px rgba(192, 132, 252, 0.5);
+    border-color: rgba(192, 132, 252, 0.8);
+}
+
+/* 主体网格：移动端单列，桌面端左窄右宽 */
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.main-grid > section {
+    min-width: 0;
+    overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+    .main-grid {
+        grid-template-columns: 360px 1fr;
+        gap: 1.5rem;
+    }
+}
+
+        /* ====== 星际地图打卡墙（新增） ====== */
+
+.map-wall {
+    width: 100%;
+    height: 280px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+/* 覆盖 Leaflet 默认样式为宇宙主题 */
+.map-wall .leaflet-container {
+    background: #0a0e27;
+    font-family: 'Inter', sans-serif;
+}
+
+/* 地图标记：照片缩略图 */
+.map-photo-marker {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(99, 102, 241, 0.3);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+}
+
+.map-photo-marker:hover {
+    transform: scale(1.3) translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 4px rgba(192, 132, 252, 0.6);
+    z-index: 1000 !important;
+}
+
+.map-photo-marker img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 数字徽章 */
+.map-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.5);
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+}
+
+/* 脉冲动画标记 */
+.map-pulse {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #6366f1;
+    position: relative;
+    border: 2px solid white;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.8);
+}
+
+.map-pulse::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* 自定义弹窗（宇宙主题） */
+.leaflet-popup-content-wrapper {
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+    color: white !important;
+    padding: 0 !important;
+}
+
+.leaflet-popup-content {
+    margin: 12px !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+}
+
+.leaflet-popup-tip {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+    color: rgba(255, 255, 255, 0.6) !important;
+    top: 8px !important;
+    right: 8px !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+    color: white !important;
+}
+
+/* 时间轴容器 */
+.timeline {
+    position: relative;
+    padding-left: 24px;
+}
+
+/* 贯穿线 */
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background: linear-gradient(to bottom, 
+        transparent 0%, 
+        rgba(99, 102, 241, 0.3) 10%, 
+        rgba(99, 102, 241, 0.3) 90%, 
+        transparent 100%
+    );
+}
+
+/* 时间轴节点 */
+.timeline-node {
+    position: relative;
+    padding-bottom: 20px;
+    padding-left: 20px;
+}
+
+/* 最后一个节点去掉底部间距 */
+.timeline-node:last-child {
+    padding-bottom: 0;
+}
+
+/* 圆点标记 */
+.timeline-node::before {
+    content: '';
+    position: absolute;
+    left: -18px;
+    top: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, 0.4);
+    border: 1.5px solid rgba(99, 102, 241, 0.6);
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+/* 悬停：圆点发光 */
+.timeline-node:hover::before {
+    background: #818cf8;
+    border-color: #c084fc;
+    box-shadow: 0 0 12px rgba(192, 132, 252, 0.6);
+    transform: scale(1.5);
+}
+
+/* 日期标签（左侧） */
+.timeline-date {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.35);
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    transition: color 0.3s;
+}
+
+.timeline-node:hover .timeline-date {
+    color: rgba(192, 132, 252, 0.7);
+}
+
+/* 内容卡片（右侧） */
+.timeline-content {
+    background: rgba(15, 23, 42, 0.25);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 12px 14px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.timeline-content:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.15);
+    transform: translateX(6px);
+}
+
+/* 标题 */
+.timeline-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 4px;
+    line-height: 1.4;
+    transition: color 0.3s;
+}
+
+.timeline-content:hover .timeline-title {
+    color: #c084fc;
+}
+
+/* 摘要 */
+.timeline-summary {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Notion 外部链接图标 */
+.timeline-content a {
+    text-decoration: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.timeline-content a svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.timeline-content:hover a svg {
+    opacity: 0.6;
+}
+
+/* ====== 移动端适配 ====== */
+@media (max-width: 768px) {
+    /* 隐藏非必要光效，减少耗电 */
+    .cursor-glow {
+        display: none;
+    }
+    
+    /* 头部更紧凑 */
+    header .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    header h1 {
+        font-size: 1.25rem;
+        letter-spacing: 0.1em;
+    }
+    
+    header .text-right {
+        display: none;
+    }
+    
+    /* 区域标题 */
+    section h2 {
+        font-size: 1rem;
+    }
+    
+    /* 时间轴更紧凑 */
+    .timeline {
+        padding-left: 16px;
+    }
+    
+    .timeline-node {
+        padding-left: 14px;
+        padding-bottom: 16px;
+    }
+    
+    .timeline-content {
+        padding: 10px 12px;
+    }
+    
+    .timeline-title {
+        font-size: 12px;
+    }
+    
+    .timeline-summary {
+        font-size: 10px;
+    }
+    
+    /* 轮播更小更密集 */
+    .photo-carousel {
+        padding: 12px 0 50px;
+    }
+    
+    .carousel-track {
+        gap: 16px;
+        padding: 12px 20px;
+    }
+    
+    .carousel-item {
+        width: 130px;
+        height: 176px;
+    }
+    
+    .carousel-item img {
+        -webkit-box-reflect: below 6px linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.25) 100%);
+    }
+    
+    /* 地图区 */
+    .map-wall {
+        height: 240px;
+    }
+    
+    .mt-4 .flex.items-center.justify-between {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .mt-4 .flex.gap-2 {
+        flex-wrap: wrap;
+    }
+    
+    .mt-4 h3 {
+        font-size: 14px;
+    }
+    
+    /* Mission Log 缩小 */
+    .mission-log {
+        width: 130px;
+        padding: 8px;
+        top: 8px;
+        right: 8px;
+        max-height: calc(100% - 16px);
+    }
+    
+    .mission-log-title {
+        font-size: 9px;
+        margin-bottom: 6px;
+        padding-bottom: 6px;
+    }
+    
+    .mission-log-item {
+        padding: 5px 0;
+    }
+    
+    .mission-log-name {
+        font-size: 9px;
+    }
+    
+    .mission-log-count {
+        font-size: 8px;
+    }
+    
+    .mission-log-thumb {
+        width: 22px;
+        height: 22px;
+    }
+    
+    /* 灵感便签：移动端默认收起，避免挡内容 */
+    .inspiration-widget {
+        width: calc(100% - 32px);
+        right: 16px;
+        bottom: 16px;
+        max-width: 340px;
+        animation: none;
+    }
+    
+    .inspiration-widget:hover {
+        transform: none;
+    }
+    
+    /* 页脚 */
+    footer {
+        padding-top: 1rem;
+        padding-bottom: 5rem;
+    }
+}
+
+    </style>
+</head>
+<body class="min-h-screen relative">
+    <!-- 鼠标跟随光晕 -->
+    <div class="cursor-glow" id="cursor-glow"></div>
+    
+    <!-- 背景照片 -->
+    <div class="bg-layer"></div>
+    <!-- 暗色遮罩 -->
+    <div class="overlay"></div>
+    
+    <!-- 星空背景（可选，如果想保留） -->
+    <div class="stars" id="stars"></div>
+    
+    <!-- 顶部导航 -->
+    <header class="fixed top-0 left-0 right-0 z-50">
+    <!-- 底部微光分隔线 -->
+    <div class="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent"></div>
+    
+    <div class="container mx-auto px-6 py-5 flex justify-between items-end">
+        <!-- 左侧：标题 -->
+        <div class="flex flex-col">
+            <span class="text-[10px] text-gray-500 tracking-[0.3em] uppercase mb-1"></span>
+            <h1 class="text-3xl font-light tracking-[0.15em] text-white/90" style="font-family: 'Inter', sans-serif;">
+                SPACE <span class="text-indigo-400/80 font-normal">of</span> Eve
+            </h1>
+        </div>
+        
+        <!-- 右侧：格言 -->
+        <div class="text-right">
+            <span class="text-[10px] text-gray-500 tracking-wider block mb-1" id="current-date">2026.06.16</span>
+            <span class="text-[11px] text-indigo-300/60 tracking-wide italic">exploration is the only morality</span>
+        </div>
+    </div>
+</header>
+
+
+    <!-- 主体内容 -->
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 pt-20 lg:pt-24 pb-12 main-grid">
+        
+        <!-- 左侧：时间轴文章 -->
+<section class="reveal reveal-left">
+    <div class="flex items-center gap-2 mb-6">
+        <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+        <h2 class="text-lg font-semibold text-white">rendezvous</h2>
+        <span class="text-xs text-gray-500 ml-auto">JOURNAL</span>
+    </div>
+    
+    <!-- 时间轴容器 -->
+    <div class="timeline" id="article-list">
+        <!-- 文章由 JS 生成 -->
+    </div>
+</section>
+
+
+<!-- 右侧：Memories 照片轮播 -->
+<section class="reveal reveal-right">
+    <div class="flex items-center gap-2 mb-4">
+        <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+        <h2 class="text-lg font-semibold text-white">Memories</h2>
+        <span class="text-xs text-gray-500 ml-auto">GALLERY</span>
+    </div>
+
+    <!-- 照片轮播 -->
+    <div class="photo-carousel" id="photo-carousel" style="position: relative;">
+        <!-- 宇宙星云光效 -->
+        <div class="carousel-universe-glow"></div>
+        <!-- 粒子星座画布 -->
+        <canvas class="particle-canvas" id="photo-particles"></canvas>
+        <div class="carousel-track" id="carousel-track">
+            <!-- 照片由 JS 生成 -->
+        </div>
+    </div>
+
+    <!-- 星际地图打卡墙 -->
+<div class="mt-4 space-y-4">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <span class="text-xl">🗺️</span>
+            <h3 class="text-base font-semibold text-white">星际足迹</h3>
+        </div>
+        <div class="flex gap-2 text-[10px] text-gray-400">
+            <span class="px-2 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30">🇨🇳 中国</span>
+            <span class="px-2 py-1 rounded-full bg-purple-500/20 border border-purple-500/30">🇸🇬 新加坡</span>
+        </div>
+    </div>
+    
+    <!-- 地图容器 -->
+    <div class="map-wall" id="map-wall" style="position: relative;">
+        <!-- 任务日志 -->
+        <div class="mission-log" id="mission-log">
+            <div class="mission-log-title">Mission Log</div>
+            <!-- 由 JS 生成 -->
+        </div>
+    </div>
+    
+    <!-- 统计 -->
+    <div class="flex justify-between text-[10px] text-gray-500 px-1">
+        <span>33 个坐标已标记</span>
+        <span>121 张星际记忆</span>
+    </div>
+</div>
+
+</section>
+
+    </main>
+
+   <!-- 底部：只保留版权 -->
+<footer class="container mx-auto px-6 py-6 border-t border-gray-800 mt-6">
+    <div class="text-center text-gray-600 text-xs">
+        <p> SPACE of Eve.</p>
+    </div>
+<!-- 右下角灵感便签 -->
+<div id="inspiration-widget" class="inspiration-widget">
+    <div class="inspiration-header">
+        <div class="inspiration-title">
+            <span>✦</span>
+            INSPIRATION
+        </div>
+        <div class="inspiration-toggle" id="widget-toggle" onclick="toggleWidget()">−</div>
+    </div>
+    
+    <div class="inspiration-body" id="widget-content">
+        <div class="inspiration-input-wrap">
+            <input 
+                type="text" 
+                id="inspiration-input" 
+                class="inspiration-input"
+                placeholder="Say something to the universe..." 
+                onkeypress="if(event.key==='Enter') addInspiration()"
+            >
+            <button class="inspiration-submit" onclick="addInspiration()">→</button>
+        </div>
+        
+        <!-- 留言列表 -->
+        <div id="inspiration-list" class="inspiration-list">
+            <!-- 示例留言 -->
+            <div class="inspiration-item">
+                <p class="inspiration-item-text">Do not go gentle into that good night.</p>
+                <div class="inspiration-item-time">universe • now</div>
+                <button class="inspiration-item-delete" onclick="this.parentElement.remove()">×</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</footer>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img src="" alt="放大图片" id="lightbox-img">
+    </div>
+
+    <script>
+        // 灵感便签功能
+function addInspiration() {
+    const input = document.getElementById('inspiration-input');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    const list = document.getElementById('inspiration-list');
+    const div = document.createElement('div');
+    div.className = 'inspiration-item';
+    div.innerHTML = `
+        <p class="inspiration-item-text">${escapeHtml(text)}</p>
+        <div class="inspiration-item-time">${formatTime(new Date())}</div>
+        <button class="inspiration-item-delete" onclick="this.parentElement.remove()">×</button>
+    `;
+    list.insertBefore(div, list.firstChild);
+    input.value = '';
+    
+    // 移除空状态
+    const empty = list.querySelector('.inspiration-empty');
+    if (empty) empty.remove();
+}
+
+function toggleWidget() {
+    const content = document.getElementById('widget-content');
+    const toggle = document.getElementById('widget-toggle');
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        toggle.textContent = '−';
+    } else {
+        content.style.display = 'none';
+        toggle.textContent = '+';
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatTime(date) {
+    const h = date.getHours().toString().padStart(2, '0');
+    const m = date.getMinutes().toString().padStart(2, '0');
+    return `${h}:${m} • universe`;
+}
+
+// ====== 鼠标跟随光晕 ======
+function initCursorGlow() {
+    const glow = document.getElementById('cursor-glow');
+    if (!glow) return;
+    
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let currentX = mouseX;
+    let currentY = mouseY;
+    let isMoving = false;
+    let timeout;
+    
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        isMoving = true;
+        glow.style.opacity = '1';
+        clearTimeout(timeout);
+        timeout = setTimeout(() => { isMoving = false; }, 100);
+    });
+    
+    function animate() {
+        currentX += (mouseX - currentX) * 0.08;
+        currentY += (mouseY - currentY) * 0.08;
+        glow.style.left = currentX + 'px';
+        glow.style.top = currentY + 'px';
+        requestAnimationFrame(animate);
+    }
+    animate();
+}
+
+// ====== 宇宙粒子星座系统（照片区） ======
+function initPhotoParticles() {
+    const canvas = document.getElementById('photo-particles');
+    const container = document.getElementById('photo-carousel');
+    if (!canvas || !container) return;
+    
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let animationId;
+    let isVisible = true;
+    
+    function resize() {
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    
+    class Particle {
+        constructor() {
+            this.reset();
+        }
+        
+        reset() {
+            const rect = container.getBoundingClientRect();
+            this.x = Math.random() * rect.width;
+            this.y = Math.random() * rect.height;
+            this.size = Math.random() * 1.5 + 0.5;
+            this.speedX = (Math.random() - 0.5) * 0.3;
+            this.speedY = (Math.random() - 0.5) * 0.3;
+            this.opacity = Math.random() * 0.5 + 0.2;
+            this.pulse = Math.random() * Math.PI * 2;
+        }
+        
+        update() {
+            const rect = container.getBoundingClientRect();
+            this.x += this.speedX;
+            this.y += this.speedY;
+            this.pulse += 0.02;
+            
+            if (this.x < 0 || this.x > rect.width) this.speedX *= -1;
+            if (this.y < 0 || this.y > rect.height) this.speedY *= -1;
+        }
+        
+        draw() {
+            const pulseOpacity = this.opacity * (0.7 + 0.3 * Math.sin(this.pulse));
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(192, 132, 252, ${pulseOpacity})`;
+            ctx.fill();
+        }
+    }
+    
+    function init() {
+        resize();
+        const count = Math.min(60, Math.floor(container.getBoundingClientRect().width / 12));
+        particles = [];
+        for (let i = 0; i < count; i++) {
+            particles.push(new Particle());
+        }
+    }
+    
+    function drawLines() {
+        const maxDistance = 100;
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < maxDistance) {
+                    const opacity = (1 - distance / maxDistance) * 0.25;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.strokeStyle = `rgba(165, 180, 252, ${opacity})`;
+                    ctx.lineWidth = 0.6;
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+    
+    function animate() {
+        if (!isVisible) {
+            animationId = requestAnimationFrame(animate);
+            return;
+        }
+        
+        const rect = container.getBoundingClientRect();
+        ctx.clearRect(0, 0, rect.width, rect.height);
+        
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+        drawLines();
+        
+        animationId = requestAnimationFrame(animate);
+    }
+    
+    // 性能优化：不可见时暂停绘制
+    const observer = new IntersectionObserver((entries) => {
+        isVisible = entries[0].isIntersecting;
+    }, { threshold: 0.1 });
+    observer.observe(canvas);
+    
+    window.addEventListener('resize', resize);
+    init();
+    animate();
+}
+
+// ====== 滚动触发动画 ======
+function initScrollReveal() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    });
+    
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => {
+        observer.observe(el);
+    });
+}
+
+// ====== 3D 倾斜效果（照片卡片） ======
+function initTiltEffect() {
+    const items = document.querySelectorAll('.carousel-item');
+    items.forEach(item => {
+        item.addEventListener('mousemove', (e) => {
+            const rect = item.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = (y - centerY) / centerY * -12;
+            const rotateY = (x - centerX) / centerX * 12;
+            
+            item.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.08)`;
+            item.style.zIndex = '10';
+        });
+        
+        item.addEventListener('mouseleave', () => {
+            item.style.transform = '';
+            item.style.zIndex = '';
+        });
+    });
+}
+        // 生成星空背景
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const count = 100;
+            
+            for (let i = 0; i < count; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.opacity = Math.random() * 0.7 + 0.3;
+                const size = Math.random() * 2 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // 显示当前日期
+        function updateDate() {
+            const date = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                weekday: 'long',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            document.getElementById('current-date').textContent = date.toLocaleDateString('zh-CN', options);
+        }
+
+        // 文章数据
+        const articles = [
+            {
+                title: "See Sunset in Sentosa",
+                date: "2026.06.11",
+                summary: "缆车驶过圣淘沙的海滩，在东海岸望向马六甲海峡",
+                notionUrl: "https://app.notion.com/p/See-Sunset-in-Sentosa-381f5a9d698980eda923f314734212b8"
+            },
+            {
+                title: "What Remains in Alila",
+                date: "2026.05.15",
+                summary: "乌镇里有什么秘密",
+            },
+            {
+                title: "Third Time in Wuhan",
+                date: "2026.03.27",
+                summary: "樱园已是我第三次来，时间和空间能在这里折叠吗",
+            },
+            {
+                title: "Servals Nights in Beijing",
+                date: "2026.02.14",
+                summary: "西山的雪和后海的风在这里交汇了",
+            },
+            {
+                title: "Hello 2026",
+                date: "2026.01.01",
+                summary: "生活的算法到底是不是宿命论",
+            },
+            {
+                title: "Subtle Delight at 30th",
+                date: "2025.08.30",
+                summary: "我看见了圣淘沙的落日，但落日不会为时间停留",
+            },
+            {
+                title: "A Poem for 40th Journey",
+                date: "2025.07.07",
+                summary: "竹杖芒鞋轻胜马，谁怕，一蓑烟雨任平生",
+            },
+            {
+                title: "Singapore Siling",
+                date: "2025.05.10",
+                summary: "竹杖芒鞋轻胜马，谁怕，一蓑烟雨任平生",
+            },
+            
+            {
+                title: "G.E.B",
+                date: "2025.02.14",
+                summary: "人类群星闪耀时",
+            },    
+        ];
+
+        // 渲染文章列表
+function renderArticles() {
+    const container = document.getElementById('article-list');
+    
+    articles.forEach((article, index) => {
+        const node = document.createElement('div');
+        node.className = 'timeline-node';
+        
+        node.innerHTML = `
+            <!-- 日期（时间轴左侧） -->
+            <div class="timeline-date">${article.date}</div>
+            
+            <!-- 内容卡片 -->
+            <div class="timeline-content" onclick="toggleEdit(${index})">
+                <a href="${article.notionUrl || '#'}" target="_blank" rel="noopener noreferrer" class="group">
+                    <h3 class="timeline-title group-hover:text-indigo-300 transition">${article.title}</h3>
+                    <svg class="w-3 h-3 text-gray-600 group-hover:text-indigo-400 transition flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                </a>
+                <p class="timeline-summary">${article.summary}</p>
+                
+                <!-- 可编辑区域（默认隐藏） -->
+                <div id="edit-area-${index}" class="hidden mt-3 pt-3 border-t border-gray-700/30">
+                    <textarea 
+                        id="textarea-${index}" 
+                        class="w-full bg-gray-900/30 border border-gray-700/50 rounded-lg p-3 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-indigo-500/30 transition resize-none"
+                        rows="4"
+                        placeholder="写下此刻的想法..."
+                    ></textarea>
+                    <div class="flex justify-end gap-2 mt-2">
+                        <button onclick="saveArticle(${index})" class="px-3 py-1.5 rounded-lg bg-indigo-600/60 text-white text-xs hover:bg-indigo-500/80 transition">保存</button>
+                        <button onclick="toggleEdit(${index})" class="px-3 py-1.5 rounded-lg bg-gray-700/30 text-gray-400 text-xs hover:bg-gray-600/50 transition">收起</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(node);
+        
+        // 加载已保存内容
+        const saved = localStorage.getItem(`article-${index}`);
+        if (saved) {
+            setTimeout(() => {
+                const textarea = document.getElementById(`textarea-${index}`);
+                if (textarea) textarea.value = saved;
+            }, 100);
+        }
+    });
+}
+
+
+// 展开/收起编辑区域
+function toggleEdit(index) {
+    const editArea = document.getElementById(`edit-area-${index}`);
+    if (editArea.classList.contains('hidden')) {
+        editArea.classList.remove('hidden');
+        editArea.classList.add('animate-fade-in');
+    } else {
+        editArea.classList.add('hidden');
+        editArea.classList.remove('animate-fade-in');
+    }
+}
+
+// 保存到本地
+function saveArticle(index) {
+    const textarea = document.getElementById(`textarea-${index}`);
+    const content = textarea.value;
+    localStorage.setItem(`article-${index}`, content);
+    
+    // 保存提示
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.textContent = '已保存 ✓';
+    btn.classList.add('bg-green-600/80');
+    setTimeout(() => {
+        btn.textContent = originalText;
+        btn.classList.remove('bg-green-600/80');
+    }, 1500);
+}
+
+// 33张照片：兼容 1.jpg / 01.jpg / 1.JPG 三种命名
+const photoFiles = [
+    "01.jpg", "02.jpg", "03.jpg", "04.jpg", "05.jpg", "06.jpg", "07.jpg", "08.jpg", "09.jpg",
+    "010.jpg", "011.jpg", "012.jpg", "013.jpg", "014.jpg", "015.jpg", "016.jpg", "017.jpg", "018.jpg", "019.jpg",
+    "020.jpg", "021.jpg", "022.jpg", "023.jpg", "024.jpg", "025.jpg", "026.jpg", "027.jpg", "028.jpg", "029.jpg",
+    "030.jpg", "031.jpg", "032.jpg", "033.jpg"
+];
+
+const photos = photoFiles.map((file, index) => ({
+    src: `./memories/${file}`,
+    title: `星际记忆 ${(index + 1).toString().padStart(2, '0')}`,
+    location: "猎户座悬臂"
+}));
+
+
+        // 渲染照片墙
+function renderPhotos() {
+    const track = document.getElementById('carousel-track');
+    const container = document.getElementById('photo-carousel');
+    
+    // 生成照片
+    photos.forEach((photo, index) => {
+        const item = document.createElement('div');
+        item.className = 'carousel-item';
+        item.innerHTML = `<img src="${photo.src}" alt="${photo.title}" loading="lazy" onerror="this.style.opacity='0.3'">`;
+        
+        // 单击激活放大
+        item.addEventListener('click', () => {
+            document.querySelectorAll('.carousel-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+        });
+        
+        // 双击打开 Lightbox
+        item.addEventListener('dblclick', () => {
+            openLightbox(photo.src);
+        });
+        
+        track.appendChild(item);
+    });
+    
+    // 拖拽滑动逻辑（带惯性和触控）
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+    let velocity = 0;
+    let lastX = 0;
+    let lastTime = 0;
+    let rafId = null;
+    
+    function startDrag(x) {
+        isDown = true;
+        container.style.cursor = 'grabbing';
+        container.classList.add('active');
+        startX = x - container.offsetLeft;
+        scrollLeft = container.scrollLeft;
+        velocity = 0;
+        lastX = x;
+        lastTime = Date.now();
+        if (rafId) cancelAnimationFrame(rafId);
+    }
+    
+    function endDrag() {
+        isDown = false;
+        container.style.cursor = 'grab';
+        container.classList.remove('active');
+        
+        // 惯性滚动
+        if (Math.abs(velocity) > 0.5) {
+            function momentum() {
+                velocity *= 0.95;
+                container.scrollLeft -= velocity;
+                if (Math.abs(velocity) > 0.5) {
+                    rafId = requestAnimationFrame(momentum);
+                }
+            }
+            momentum();
+        }
+    }
+    
+    function moveDrag(x) {
+        if (!isDown) return;
+        const now = Date.now();
+        const dt = now - lastTime;
+        if (dt > 0) {
+            velocity = (x - lastX) * 0.5;
+        }
+        lastX = x;
+        lastTime = now;
+        
+        const walk = (x - container.offsetLeft - startX) * 2;
+        container.scrollLeft = scrollLeft - walk;
+    }
+    
+    // 鼠标事件
+    container.addEventListener('mousedown', (e) => {
+        startDrag(e.pageX);
+        e.preventDefault();
+    });
+    
+    container.addEventListener('mouseleave', () => {
+        if (isDown) endDrag();
+    });
+    
+    container.addEventListener('mouseup', endDrag);
+    
+    container.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        moveDrag(e.pageX);
+    });
+    
+    // 触控事件
+    container.addEventListener('touchstart', (e) => {
+        startDrag(e.touches[0].pageX);
+    }, { passive: false });
+    
+    container.addEventListener('touchend', endDrag);
+    
+    container.addEventListener('touchmove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        moveDrag(e.touches[0].pageX);
+    }, { passive: false });
+}
+
+
+        // Lightbox 功能
+        function openLightbox(src) {
+            const lightbox = document.getElementById('lightbox');
+            const img = document.getElementById('lightbox-img');
+            img.src = src;
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // 打卡记录数据
+        const checkIns = [
+            { location: "肯尼迪航天中心", date: "2024.01.15", status: "已打卡", icon: "🚀" },
+            { location: "国际空间站", date: "2024.01.10", status: "已打卡", icon: "🛰️" },
+            { location: "月球静海基地", date: "2024.01.05", status: "已打卡", icon: "🌙" },
+            { location: "火星奥林匹斯山", date: "2023.12.28", status: "已打卡", icon: "🌋" }
+        ];
+
+        // 渲染打卡记录
+       function renderCheckIns() {
+    // 初始化地图
+    const chinaSingaporeBounds = L.latLngBounds(
+    [1.0, 73.0],   // 西南：新加坡南边，中国西部边界
+    [54.0, 135.0]  // 东北：中国北部，东部边界
+);
+
+const map = L.map('map-wall', {
+    center: [26, 110],
+    zoom: 4,
+    zoomControl: false,
+    attributionControl: false,
+    maxBounds: chinaSingaporeBounds,
+    maxBoundsViscosity: 1.0,
+    minZoom: 3,
+    maxZoom: 10
+});
+
+    // 深色地图瓦片（宇宙主题）
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    opacity: 1.0,
+    subdomains: 'abcd'
+}).addTo(map);
+
+    // 照片打卡数据（中国和新加坡）
+    const photoSpots = [
+        { lat: 39.9, lng: 116.4, photo: './memories/01.jpg', count: 8, name: '北京 · 西山夜雪' },
+        { lat: 30.6, lng: 114.3, photo: './memories/03.jpg', count: 5, name: '武汉 · 樱园春色' },
+        { lat: 31.2, lng: 121.5, photo: './memories/05.jpg', count: 12, name: '上海 · 外滩暮色' },
+        { lat: 22.5, lng: 114.1, photo: './memories/07.jpg', count: 3, name: '深圳 · 湾岸灯塔' },
+        { lat: 1.35, lng: 103.8, photo: './memories/02.jpg', count: 15, name: '新加坡 · 圣淘沙' },
+        { lat: 1.30, lng: 103.85, photo: './memories/04.jpg', count: 6, name: '新加坡 · 滨海湾' },
+        { lat: 34.3, lng: 108.9, photo: './memories/06.jpg', count: 4, name: '西安 · 古城墙' },
+        { lat: 24.9, lng: 118.6, photo: './memories/08.jpg', count: 7, name: '厦门 · 鼓浪屿' },
+        { lat: 25.0, lng: 121.5, photo: './memories/09.jpg', count: 2, name: '台北 · 象山日落' },
+        { lat: 1.32, lng: 103.9, photo: './memories/10.jpg', count: 9, name: '新加坡 · 乌节路' }
+    ];
+
+    const markers = [];
+    const missionLog = document.getElementById('mission-log');
+    const logList = document.createElement('div');
+
+    // 添加照片标记
+    photoSpots.forEach((spot, index) => {
+        const iconHtml = `
+            <div class="map-photo-marker" id="marker-${index}">
+                <img src="${spot.photo}" alt="${spot.name}" onerror="this.src='https://via.placeholder.com/100'">
+                <span class="map-badge">${spot.count}</span>
+            </div>
+        `;
+        
+        const customIcon = L.divIcon({
+            html: iconHtml,
+            className: '',
+            iconSize: [36, 36],
+            iconAnchor: [18, 18]
+        });
+        
+        const marker = L.marker([spot.lat, spot.lng], { icon: customIcon }).addTo(map);
+        markers.push(marker);
+        
+        // 点击弹窗
+        marker.bindPopup(`
+            <div style="text-align:center;">
+                <img src="${spot.photo}" style="width:140px;height:95px;object-fit:cover;border-radius:10px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.1);">
+                <div style="font-weight:600;color:white;font-size:13px;">${spot.name}</div>
+                <div style="color:#a5b4fc;font-size:11px;margin-top:6px;">${spot.count} 张星际记忆</div>
+            </div>
+        `);
+        
+        // 任务日志项
+        const logItem = document.createElement('div');
+        logItem.className = 'mission-log-item';
+        logItem.innerHTML = `
+            <div class="mission-log-thumb">
+                <img src="${spot.photo}" alt="${spot.name}" onerror="this.src='https://via.placeholder.com/100'">
+            </div>
+            <div class="mission-log-info">
+                <div class="mission-log-name">${spot.name}</div>
+                <div class="mission-log-count">${spot.count}  memories</div>
+            </div>
+        `;
+        logItem.addEventListener('click', () => {
+            map.flyTo([spot.lat, spot.lng], 7, {
+                duration: 1.5,
+                easeLinearity: 0.25
+            });
+            marker.openPopup();
+        });
+        logList.appendChild(logItem);
+    });
+
+    missionLog.appendChild(logList);
+
+    // 星座连线：按经纬度排序后连接，形成探索航线
+    const sortedSpots = [...photoSpots].sort((a, b) => a.lng - b.lng);
+    const pathCoords = sortedSpots.map(s => [s.lat, s.lng]);
+    
+    // 主线：淡紫色发光连线
+    const mainLine = L.polyline(pathCoords, {
+        color: '#818cf8',
+        weight: 2,
+        opacity: 0.5,
+        dashArray: '6 8',
+        className: 'map-constellation-line'
+    }).addTo(map);
+    
+    // 辅助发光层（较粗、较透明）
+    L.polyline(pathCoords, {
+        color: '#c084fc',
+        weight: 6,
+        opacity: 0.12,
+        smoothFactor: 1.5
+    }).addTo(map);
+
+    // 添加当前位置脉冲（猎户座中心点装饰）
+    const pulseIcon = L.divIcon({
+        html: '<div class="map-pulse"></div>',
+        className: '',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+    
+    L.marker([20, 105], { icon: pulseIcon }).addTo(map)
+        .bindPopup('<div style="color:#a5b4fc;">📍 当前星际坐标<br>猎户座悬臂</div>');
+}
+
+
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            createStars();
+            updateDate();
+            renderArticles();
+            renderPhotos();
+            renderCheckIns();
+            initCursorGlow();
+            initPhotoParticles();
+            initScrollReveal();
+            initTiltEffect();
+            
+            // 移动端默认收起灵感便签，避免遮挡内容
+            if (window.innerWidth <= 768) {
+                toggleWidget();
+            }
+            
+            // 每分钟更新日期
+            setInterval(updateDate, 60000);
+        });
+
+        // 键盘ESC关闭lightbox
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLightbox();
+        });
+    </script>
+</body>
+</html>
