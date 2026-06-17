@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>See Sunset in Sentosa - SPACE of Eve</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #191919;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 15px;
+            letter-spacing: 0.03em;
+            line-height: 1.75;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* 封面头图 */
+        .cover {
+            width: 100%;
+            height: 28vh;
+            min-height: 220px;
+            max-height: 360px;
+            background-image: url('../Sentosa.jpg');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .cover::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(25,25,25,0) 0%, rgba(25,25,25,0.9) 100%);
+        }
+        
+        /* 返回按钮 */
+        .back {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: all 0.3s;
+        }
+        .back:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            transform: translateX(-2px);
+        }
+        
+        /* 内容容器 */
+        .content {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 0 28px 100px;
+            position: relative;
+            z-index: 2;
+            margin-top: -50px;
+        }
+        
+        /* 标题 */
+        h1 {
+            font-family: 'Inter', sans-serif;
+            font-size: 32px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.95);
+            letter-spacing: 0.02em;
+            margin-bottom: 40px;
+            line-height: 1.25;
+        }
+        
+        /* 正文段落 */
+        p {
+            margin-bottom: 22px;
+            font-weight: 400;
+        }
+        
+        /* 高亮关键词 */
+        .highlight {
+            color: #c084fc;
+            font-weight: 500;
+        }
+        
+        /* 代码风格文字 */
+        code {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+            font-size: 0.88em;
+            background: rgba(99, 102, 241, 0.12);
+            color: #a5b4fc;
+            padding: 2px 5px;
+            border-radius: 4px;
+            letter-spacing: 0.02em;
+        }
+        
+        /* 移动端 */
+        @media (max-width: 640px) {
+            h1 { font-size: 26px; margin-bottom: 32px; }
+            body { font-size: 14px; letter-spacing: 0.02em; }
+            .content { padding: 0 22px 60px; margin-top: -36px; }
+            .cover { height: 22vh; min-height: 180px; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="../index.html" class="back">←</a>
+
+    <div class="cover"></div>
+
+    <div class="content">
+        
+        <h1>See Sunset in Sentosa</h1>
+        
+        <p>
+            迄今为止，我的日记本已经荒废多时了，是因为文字都可以成为自我欺骗的工具。每次写日记，更多的感叹是为什么我能大义凛然的写下这些看起来华而不实的句子。与其说日记是用来记录生活，对我来说不如叫做掩盖生活，因为脆弱在我看来是一种原罪。在这几年里，"体验"越来越重要，因为只有记忆才是真实存在的。
+        </p>
+        
+        <p>
+            时间好像在飞行，每次降落在 SG 的时间都是深夜了，每次都能够看到无数马六甲海峡里繁忙的货船，它们必定历经了无数次南洋的日落，对日落染红的海洋带来潮湿的海风不禁熟悉。我喜欢 SG，不是因为这里潮湿的气候，而是每次来到这里，都有短暂逃离现实的机会。SG 就像我梦想里的国度，圣淘沙更像在这个国度里的秘密基地，因为现实世界里，这座小岛也不曾与其他的陆地接壤。
+        </p>
+        
+        <p>
+            "故地重游"是一种"强化学习"，有仪式感的故地重游是一种"<code>reward signal</code>"，因为故地重游可以复刻快乐，虽然每次的快乐都不尽相同，但多巴胺带来快乐的感受是相通的。比如，吃简陋的泡面，但一定要在 SG，也一定要在露台上，也是一种快乐的 Signal。我内心里应该是个冷漠的人，冷漠到好像在没什么朋友，但好像又不是一个理性的人，就像我想抓住在 SG 的一切，如果回忆有重量，苏州河畔的东方明珠，和圣淘沙没看到的日落，应当是最大的权重。
+        </p>
+        
+        <p>
+            SG 是个"弹丸之地"，对我来说却写满了故事，Pan Pacific 的酒精、SG Flyer 的冷气、Sentosa 的日落，还有东海岸的沙滩，是这个梦幻国度记忆宫殿里的碎片。我独自一人去了东海岸，过去在海边总觉得应该享受孤独，但那天东海岸狭长的步道就好像雨后的奥体森林，映射着那些一点都不孤独的瞬间。
+        </p>
+        
+        <p>
+            我想和你做一些极致浪漫的事情，也许在海边散步，也许骑单车穿过东海岸狭长的公园，也许带两包泡面回到酒店里在阳台吹风；这些看似平常的东西，在我眼里便是最微妙的快乐。因为我不知道怎么诉说我的快乐，就像我在这篇文章里删掉的字句，留下的克制和隐忍，它们看起来像一种保护色。
+        </p>
+        
+        <p>
+            过去几十年里，分离从不会让我觉得非常难过，因为习惯分开是我永远面对的课题。但竟然每一次预知明明还会相聚的和你分开，会让我难过；在我有限的年岁里，恋爱带来的悸动，是相顾无言不需牵手就能带来大量多巴胺的快乐，过去这么多次相聚里，我竟每一次都有这种奇妙的感觉，是一种害羞和掩饰带来的矛盾体验。
+        </p>
+        
+        <p>
+            我过去以为感情最后都会变成一种将就，但是我却体会到了一种被爱的感觉，是一种无比正向的 Positive Support，打破所有安全感的漏洞。就像那晚的东海岸，我想说的胜过我说出来的许多，如同我有千百思念，最后却化成了今日的天气一样单薄。
+        </p>
+        
+        <p>
+            也许你根本不会看到这，不过也没有关系。也许这些文字里的逻辑错误很多，但我依旧选择 AI 不能替代我真实的情感，也许你会觉得我真实的情感是无聊的，不过也没关系。这些设计原本是我的借口，想送给你一个生日礼物，最后可能感动的是我自己，但是又何妨呢，在我漫长的无聊思想和生活里，你扮演了一个不无聊的角色。
+        </p>
+        
+    </div>
+
+</body>
+</html>
